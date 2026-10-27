@@ -1,21 +1,27 @@
-import openai
+from functools import cache
+
+from openai import OpenAI
 
 # Configure OpenAI client to use vLLM server
-openai.api_base = "http://127.0.0.1:5000"
-openai.api_key = "dummy"  # vLLM doesn't require a real API key
+@cache
+def get_client() -> OpenAI:
+    return OpenAI(
+        base_url="http://127.0.0.1:5000",
+        api_key="dummy",  # vLLM doesn't require a real API key
+    )
 
 prompt = "วัดพระแก้ว กทม. เดินทางไปอย่างไร"
 
 # Non-Streaming Response
 def response(prompt):
     try:
-        response = openai.Completion.create(
+        response = get_client().completions.create(
             model=".",  # Specify the model you're using with vLLM
             prompt=prompt,
             max_tokens=512,
             temperature=0.7,
             top_p=0.8,
-            top_k=40,
+            extra_body={"top_k": 40},
             stop=["<|im_end|>"]
         )
         print("Generated Text:", response.choices[0].text)
@@ -29,13 +35,13 @@ response(prompt)
 # Streaming version
 def stream_response(prompt):
     try:
-        response = openai.Completion.create(
+        response = get_client().completions.create(
             model=".",  # Specify the model you're using with vLLM
             prompt=prompt,
             max_tokens=512,
             temperature=0.7,
             top_p=0.8,
-            top_k=40,
+            extra_body={"top_k": 40},
             stop=["<|im_end|>"],
             stream=True  # Enable streaming
         )
